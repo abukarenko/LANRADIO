@@ -6,6 +6,7 @@
 #include "http_stream.h"
 #include "i2s_stream.h"
 #include "mp3_decoder.h"
+#include "esp_check.h"
 #include "esp_log.h"
 
 static const char *TAG = "player";
@@ -26,7 +27,7 @@ esp_err_t player_init(void) {
     mp3_decoder_cfg_t mp3_cfg = DEFAULT_MP3_DECODER_CONFIG();
     audio_element_handle_t mp3 = mp3_decoder_init(&mp3_cfg);
     i2s_stream_cfg_t i2s_cfg = I2S_STREAM_CFG_DEFAULT_WITH_PARA(
-        AUDIO_STREAM_WRITER, LANRADIO_I2S_PORT, 44100, 16, AUDIO_I2S_STD_MODE);
+        LANRADIO_I2S_PORT, 44100, I2S_DATA_BIT_WIDTH_16BIT, AUDIO_STREAM_WRITER);
     i2s_cfg.std_cfg.gpio_cfg.bclk = LANRADIO_I2S_BCLK_GPIO;
     i2s_cfg.std_cfg.gpio_cfg.ws = LANRADIO_I2S_WS_GPIO;
     i2s_cfg.std_cfg.gpio_cfg.dout = LANRADIO_I2S_DOUT_GPIO;
@@ -65,7 +66,9 @@ esp_err_t player_stop(void) {
 esp_err_t player_set_volume(int volume) {
     if (volume < 0 || volume > 100) return ESP_ERR_INVALID_ARG;
     s_volume = volume;
-    return i2s_stream_set_vol(s_i2s, volume);
+    /* UDA1334A has no programmable hardware volume. Keep software state until
+     * a DSP/volume element is added to the pipeline. */
+    return ESP_OK;
 }
 
 int player_get_volume(void) { return s_volume; }
