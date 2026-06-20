@@ -7,3 +7,6 @@ sdkconfig.old
 # Local editor configuration
 .vscode/
 .clangd
+
+# Local notes may contain Wi-Fi credentials or other test data.
+help.txt
