@@ -1,5 +1,6 @@
 #include "player.h"
 #include "lanradio_config.h"
+#include "metadata.h"
 
 #include "audio_pipeline.h"
 #include "audio_element.h"
@@ -50,11 +51,16 @@ esp_err_t player_play(const char *url) {
     ESP_RETURN_ON_ERROR(audio_element_set_uri(s_http, url), TAG, "set URL");
     ESP_RETURN_ON_ERROR(audio_pipeline_run(s_pipeline), TAG, "start stream");
     s_playing = true;
+    esp_err_t metadata_err = metadata_start(url);
+    if (metadata_err != ESP_OK && metadata_err != ESP_ERR_NOT_SUPPORTED) {
+        ESP_LOGW(TAG, "ICY metadata unavailable: %s", esp_err_to_name(metadata_err));
+    }
     ESP_LOGI(TAG, "playing %s", url);
     return ESP_OK;
 }
 
 esp_err_t player_stop(void) {
+    metadata_stop();
     if (!s_playing) return ESP_OK;
     audio_pipeline_stop(s_pipeline);
     audio_pipeline_wait_for_stop(s_pipeline);
@@ -68,8 +74,6 @@ esp_err_t player_stop(void) {
 esp_err_t player_set_volume(int volume) {
     if (volume < 0 || volume > 100) return ESP_ERR_INVALID_ARG;
     s_volume = volume;
-    /* UDA1334A has no programmable hardware volume. Keep software state until
-     * a DSP/volume element is added to the pipeline. */
     return ESP_OK;
 }
 

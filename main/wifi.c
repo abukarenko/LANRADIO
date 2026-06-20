@@ -16,6 +16,7 @@ static const char *TAG = "wifi";
 static bool s_initialized;
 static bool s_has_ip;
 static char s_ssid[33];
+static lanradio_wifi_connected_cb_t s_connected_callback;
 
 static esp_err_t nvs_set_string(const char *key, const char *value) {
     nvs_handle_t nvs;
@@ -45,8 +46,10 @@ static void wifi_event_handler(void *arg, esp_event_base_t base, int32_t id, voi
     }
     if (base == IP_EVENT && id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t *event = data;
+        bool was_connected = s_has_ip;
         s_has_ip = true;
         ESP_LOGI(TAG, "DHCP address: " IPSTR, IP2STR(&event->ip_info.ip));
+        if (!was_connected && s_connected_callback) s_connected_callback();
     }
 }
 
@@ -64,6 +67,7 @@ esp_err_t lanradio_wifi_set_password(const char *password) {
 
 const char *lanradio_wifi_ssid(void) { return s_ssid[0] ? s_ssid : "not configured"; }
 bool lanradio_wifi_has_ip(void) { return s_has_ip; }
+void lanradio_wifi_set_connected_callback(lanradio_wifi_connected_cb_t callback) { s_connected_callback = callback; }
 
 esp_err_t lanradio_wifi_connect(void) {
     char password[65] = {0};
