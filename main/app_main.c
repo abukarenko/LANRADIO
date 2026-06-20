@@ -19,7 +19,10 @@ void app_main(void) {
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     ESP_ERROR_CHECK(player_init());
-    ESP_ERROR_CHECK(lanradio_ethernet_start());
+    err = lanradio_ethernet_start();
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "Ethernet unavailable (%s); console remains available", esp_err_to_name(err));
+    }
     console_start();
     ESP_LOGI(TAG, "LANRADIO started; awaiting Ethernet DHCP");
 }

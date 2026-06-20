@@ -1,5 +1,6 @@
 #include "console.h"
 #include "ethernet.h"
+#include "wifi.h"
 #include "player.h"
 #include "stations.h"
 #include "lanradio_config.h"
@@ -15,7 +16,7 @@
 static const char *TAG = "console";
 
 static void print_help(void) {
-    printf("help | list | play <1..%u> | stop | vol <0..100> | info\r\n", (unsigned)stations_count());
+    printf("help | list | wifi <SSID> | pass <password> | connect | play <1..%u> | stop | vol <0..100> | info\r\n", (unsigned)stations_count());
 }
 
 static void handle_command(char *line) {
@@ -30,10 +31,25 @@ static void handle_command(char *line) {
         }
         return;
     }
+    if (!strcmp(command, "wifi")) {
+        esp_err_t err = lanradio_wifi_set_ssid(argument);
+        printf(err == ESP_OK ? "Wi-Fi SSID saved.\r\n" : "SSID must be 1..32 characters.\r\n");
+        return;
+    }
+    if (!strcmp(command, "pass")) {
+        esp_err_t err = lanradio_wifi_set_password(argument);
+        printf(err == ESP_OK ? "Wi-Fi password saved.\r\n" : "Password must be 0..63 characters.\r\n");
+        return;
+    }
+    if (!strcmp(command, "connect")) {
+        esp_err_t err = lanradio_wifi_connect();
+        printf(err == ESP_OK ? "Connecting to Wi-Fi...\r\n" : "Set wifi and pass first.\r\n");
+        return;
+    }
     if (!strcmp(command, "play")) {
         const station_t *s = argument ? stations_get((size_t)strtoul(argument, NULL, 10)) : NULL;
         if (!s) { printf("Invalid station. Use list.\r\n"); return; }
-        if (!lanradio_ethernet_has_ip()) { printf("Ethernet has no DHCP address yet.\r\n"); return; }
+        if (!lanradio_ethernet_has_ip() && !lanradio_wifi_has_ip()) { printf("No Ethernet or Wi-Fi DHCP address yet.\r\n"); return; }
         esp_err_t err = player_play(s->url);
         printf(err == ESP_OK ? "Playing: %s\r\n" : "Could not start stream: %s\r\n",
                err == ESP_OK ? s->name : esp_err_to_name(err));
@@ -47,8 +63,9 @@ static void handle_command(char *line) {
         return;
     }
     if (!strcmp(command, "info")) {
-        printf("Ethernet: %s; player: %s; volume: %d\r\n",
+        printf("Ethernet: %s; Wi-Fi: %s (%s); player: %s; volume: %d\r\n",
                lanradio_ethernet_has_ip() ? "DHCP ready" : "waiting for DHCP",
+               lanradio_wifi_has_ip() ? "DHCP ready" : "disconnected", lanradio_wifi_ssid(),
                player_is_playing() ? "playing" : "stopped", player_get_volume());
         return;
     }

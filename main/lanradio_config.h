@@ -20,4 +20,5 @@
 
 #define LANRADIO_UART_NUM               0
 #define LANRADIO_UART_BAUD              115200
-#define LANRADIO_STREAM_BUFFER_BYTES    (32 * 1024)
+#define LANRADIO_STREAM_BUFFER_BYTES    (64 * 1024)
+#define LANRADIO_PCM_BUFFER_BYTES       (16 * 1024)

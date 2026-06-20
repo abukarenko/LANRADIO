@@ -25,9 +25,11 @@ esp_err_t player_init(void) {
     http_cfg.out_rb_size = LANRADIO_STREAM_BUFFER_BYTES;
     s_http = http_stream_init(&http_cfg);
     mp3_decoder_cfg_t mp3_cfg = DEFAULT_MP3_DECODER_CONFIG();
+    mp3_cfg.out_rb_size = LANRADIO_PCM_BUFFER_BYTES;
     audio_element_handle_t mp3 = mp3_decoder_init(&mp3_cfg);
     i2s_stream_cfg_t i2s_cfg = I2S_STREAM_CFG_DEFAULT_WITH_PARA(
         LANRADIO_I2S_PORT, 44100, I2S_DATA_BIT_WIDTH_16BIT, AUDIO_STREAM_WRITER);
+    i2s_cfg.out_rb_size = LANRADIO_PCM_BUFFER_BYTES;
     i2s_cfg.std_cfg.gpio_cfg.bclk = LANRADIO_I2S_BCLK_GPIO;
     i2s_cfg.std_cfg.gpio_cfg.ws = LANRADIO_I2S_WS_GPIO;
     i2s_cfg.std_cfg.gpio_cfg.dout = LANRADIO_I2S_DOUT_GPIO;
